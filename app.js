@@ -13,7 +13,7 @@ try { const r = JSON.parse(localStorage.getItem(KEY)); if (r && r.members) S = r
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 
 /* ---------- Sincronización con el servidor compartido (Google Sheets) ---------- */
-const API = ''; // URL del servidor (Google Apps Script). Vacío = datos solo en este dispositivo.
+const API = 'https://script.google.com/macros/s/AKfycbzF3YgzmxetfjLnbbHV987vhc4yRdNTVfTVTcvaOxcMRfP6gigyQ3_wa1hzbSz_aFTv/exec'; // URL del servidor (Google Apps Script). Vacío = datos solo en este dispositivo.
 const QKEY = 'weare.q';
 let queue = []; try { queue = JSON.parse(localStorage.getItem(QKEY)) || []; } catch (e) {}
 const saveQ = () => { try { localStorage.setItem(QKEY, JSON.stringify(queue)); } catch (e) {} };
