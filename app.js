@@ -5,11 +5,19 @@ const KEY = 'weare.v1';
 const C = 263.9;
 
 // Ministerios y su color (matiz HSL)
-const MINS = ['PAREJAS', 'MIC', 'MJC', 'MAYO', 'PEC', 'DAMAS', 'AÑOS DORADOS'];
-const MHUE = { PAREJAS: 340, MIC: 28, MJC: 165, MAYO: 212, PEC: 250, DAMAS: 290, 'AÑOS DORADOS': 44 };
+const MINS = ['RAYCES', 'PAREJAS', 'MIC INFANTIL', 'MIC JUNIOR', 'JOVENES MJC', 'UNIVERSITARIOS MAYO', 'PROFESIONALES PEC', 'DAMAS TARDE', 'DAMAS AÑOS DORADOS'];
+const MHUE = { RAYCES: 200, PAREJAS: 340, 'MIC INFANTIL': 28, 'MIC JUNIOR': 12, 'JOVENES MJC': 165, 'UNIVERSITARIOS MAYO': 212, 'PROFESIONALES PEC': 250, 'DAMAS TARDE': 290, 'DAMAS AÑOS DORADOS': 44 };
+
+// Lista base (Excel «Recurso Humano Chillogallo 2026»): siempre visible en todas las reuniones.
+// Las personas nuevas que se agregan desde la app llevan un id que empieza con «n-».
+const BASE = (window.BASE_MEMBERS || []).map(m => ({ id: m.id, nombres: m.nombres, apellidos: '', ministerio: m.ministerio, edad: '', sexo: '', celular: '', nuevo: '' }));
+const isExtra = m => String(m.id).startsWith('n-');
+const withBase = list => { const seen = new Set(BASE.map(m => m.id)); return [...BASE, ...(list || []).filter(m => isExtra(m) && !seen.has(m.id) && seen.add(m.id))]; };
+const pruneAtt = (a, members) => { const ok = new Set(members.map(m => m.id)), o = {}; Object.keys(a || {}).forEach(d => { const ids = Object.keys(a[d]).filter(i => ok.has(i)); if (ids.length) { o[d] = {}; ids.forEach(i => o[d][i] = a[d][i]); } }); return o; };
 
 let S = { meeting: 'RAYCES', members: [], att: {} };
 try { const r = JSON.parse(localStorage.getItem(KEY)); if (r && r.members) S = r; } catch (e) {}
+S.members = withBase(S.members); S.att = pruneAtt(S.att, S.members);
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 
 /* ---------- Sincronización con el servidor compartido (Google Sheets) ---------- */
@@ -39,12 +47,9 @@ async function flush() {
 }
 function applyRemote(st) {
   if (!st || !st.members) return;
-  if (!st.members.length && S.members.length) { // servidor vacío: sembrar con lo que ya hay en este dispositivo
-    op({ t: 'bulk', members: S.members });
-    const a = normAtt(S.att); Object.keys(a).forEach(d => Object.keys(a[d]).forEach(id => op({ t: 'att', date: d, id, on: true })));
-    return;
-  }
-  const next = { meeting: st.meeting || S.meeting, members: st.members, att: normAtt(st.att) };
+  // La lista base viene del repo; del servidor solo se toman las personas nuevas agregadas desde la app
+  const members = withBase([...st.members, ...S.members.filter(m => isExtra(m) && !st.members.some(x => x.id === m.id))]);
+  const next = { meeting: st.meeting || S.meeting, members, att: pruneAtt(normAtt(st.att), members) };
   const cur = JSON.stringify({ meeting: S.meeting, members: S.members, att: normAtt(S.att) });
   if (JSON.stringify(next) === cur) return;
   S = next; save(); renderHead(); renderList();
@@ -66,7 +71,7 @@ let view = 'home';
 
 const norm = s => (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 const full = m => `${m.nombres} ${m.apellidos}`.trim();
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const uid = () => 'n-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const dayAtt = () => (S.att[date] ||= {});
 const isIn = id => !!(S.att[date] && S.att[date][id]);
 const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
@@ -76,20 +81,11 @@ const titleCase = s => (s || '').trim().replace(/\s+/g, ' ').toLowerCase().repla
 const cleanPhone = s => (s || '').toString().replace(/[^\d+]/g, '');
 
 // Ministerio sugerido por edad y sexo (Parejas se elige a mano)
-function suggest(edad, sexo) {
-  if (edad === '' || edad == null || isNaN(edad)) return '';
-  edad = +edad;
-  if (edad <= 11) return 'MIC';
-  if (edad <= 18) return 'MJC';
-  if (edad <= 29) return 'MAYO';
-  if (edad <= 45) return 'PEC';
-  if (sexo === 'mujer') return edad > 65 ? 'AÑOS DORADOS' : 'DAMAS';
-  return '';
-}
+function suggest() { return ''; }
 function matchMin(v) {
   const n = norm(v).replace(/\s+/g, ' ');
   if (!n) return '';
-  if (n.startsWith('anos dorados') || n === 'dorados') return 'AÑOS DORADOS';
+  if (n === 'anos dorados' || n === 'dorados') return 'DAMAS AÑOS DORADOS';
   return MINS.find(m => norm(m) === n) || '';
 }
 function matchSex(v) {
@@ -164,7 +160,7 @@ function renderCount() {
 
 /* ---------- Lista ---------- */
 function hue(s) { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 360; return 190 + (h % 110); }
-function initials(m) { return ((m.nombres[0] || '') + (m.apellidos[0] || '')).toUpperCase(); }
+function initials(m) { const w = full(m).split(/\s+/).filter(Boolean), b = w.length >= 4 ? w[2] : w[1]; return ((w[0] || '').charAt(0) + (b || '').charAt(0)).toUpperCase(); }
 
 function rowHTML(m, i) {
   const h = hue(full(m));
@@ -268,21 +264,10 @@ function buildMinPick() {
 function syncPick() {
   const f = $('#personForm');
   $$('#minPick button').forEach(b => b.classList.toggle('on', b.dataset.v === pickMin));
-  $$('#sexSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === pickSex));
-  const sug = suggest(f.edad.value, pickSex);
-  $$('#minPick button').forEach(b => b.classList.toggle('sug', !!sug && b.dataset.v === sug));
-  $('#minHint').textContent = sug ? `Según la edad${pickSex ? ' y el sexo' : ''}, le corresponde ${sug}.` : (f.edad.value !== '' && +f.edad.value > 45 && pickSex !== 'mujer' ? 'Elige el ministerio (por ejemplo PAREJAS si viene con su pareja).' : 'Se sugiere automáticamente según la edad.');
-}
-function autoMin() {
-  const f = $('#personForm');
-  if (minTouched) return syncPick();
-  const sug = suggest(f.edad.value, pickSex);
-  pickMin = sug; syncPick();
+  $('#minHint').textContent = pickMin ? '' : 'Elige el ministerio de la persona.';
 }
 buildMinPick();
 $('#minPick').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; pickMin = b.dataset.v; minTouched = true; buzz(6); syncPick(); });
-$('#sexSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; pickSex = pickSex === b.dataset.v ? '' : b.dataset.v; buzz(6); autoMin(); });
-$('#personForm').edad.addEventListener('input', autoMin);
 
 function openPerson() {
   const f = $('#personForm'); f.reset();
@@ -299,14 +284,14 @@ function openPerson() {
 $('#personForm').addEventListener('submit', e => {
   e.preventDefault();
   const f = e.target;
-  const nombres = titleCase(f.nombres.value), apellidos = titleCase(f.apellidos.value), celular = cleanPhone(f.celular.value);
+  const nombres = titleCase(f.nombres.value), apellidos = titleCase(f.apellidos.value);
   const edad = f.edad.value === '' ? '' : Math.round(+f.edad.value);
   if (!nombres) return toast('Escribe los nombres'), f.nombres.focus();
   if (!apellidos) return toast('Escribe los apellidos'), f.apellidos.focus();
-  if (edad === '' || edad < 0 || edad > 110) return toast('Escribe la edad'), f.edad.focus();
-  if (celular.replace(/\D/g, '').length < 7) return toast('Revisa el número de celular'), f.celular.focus();
-  const data = { nombres, apellidos, celular, edad, sexo: pickSex, ministerio: pickMin };
-  const dup = S.members.find(m => m.celular && m.celular === celular);
+  if (edad !== '' && (edad < 0 || edad > 110)) return toast('Revisa la edad'), f.edad.focus();
+  if (!pickMin) return toast('Elige el ministerio');
+  const data = { nombres, apellidos, celular: '', edad, sexo: '', ministerio: pickMin };
+  const dup = S.members.find(m => norm(full(m)) === norm(`${nombres} ${apellidos}`));
   if (dup) {
     dayAtt()[dup.id] = Date.now(); op({ t: 'att', date, id: dup.id, on: true }); save(); closeSheets(); renderList();
     return toast(`${dup.nombres} ya existía · marcada ✓`);
@@ -395,7 +380,7 @@ function upsert(p) {
   const key = norm(`${p.nombres} ${p.apellidos}`);
   const ex = S.members.find(m => norm(full(m)) === key || (p.celular && m.celular === p.celular));
   if (ex) return 0; // las personas que ya existen no se modifican
-  S.members.push({ id: uid(), nombres: p.nombres, apellidos: p.apellidos, celular: p.celular || '', edad: p.edad ?? '', sexo: p.sexo || '', ministerio: p.ministerio || '' });
+  S.members.push({ id: uid(), nombres: p.nombres, apellidos: p.apellidos, celular: p.celular || '', edad: p.edad ?? '', sexo: p.sexo || '', ministerio: p.ministerio || '', nuevo: todayStr() });
   return 1;
 }
 function splitName(parts) {
@@ -404,7 +389,7 @@ function splitName(parts) {
   if (parts.length === 3) return [parts[0], parts.slice(1).join(' ')];
   return [parts.slice(0, 2).join(' '), parts.slice(2).join(' ')];
 }
-function finishImport(n, label) { save(); op({ t: 'bulk', members: S.members }); renderList(); closeSheets(); toast(n ? `${n} ${label} agregadas` : 'No había nadie nuevo'); }
+function finishImport(n, label) { save(); op({ t: 'bulk', members: S.members.filter(isExtra) }); renderList(); closeSheets(); toast(n ? `${n} ${label} agregadas` : 'No había nadie nuevo'); }
 
 // Texto pegado: "Nombres Apellidos, edad, ministerio"
 function importText(text) {
