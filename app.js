@@ -12,6 +12,50 @@ let S = { meeting: 'RAYCES', members: [], att: {} };
 try { const r = JSON.parse(localStorage.getItem(KEY)); if (r && r.members) S = r; } catch (e) {}
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 
+/* ---------- Sincronización con el servidor compartido (Google Sheets) ---------- */
+const API = ''; // URL del servidor (Google Apps Script). Vacío = datos solo en este dispositivo.
+const QKEY = 'weare.q';
+let queue = []; try { queue = JSON.parse(localStorage.getItem(QKEY)) || []; } catch (e) {}
+const saveQ = () => { try { localStorage.setItem(QKEY, JSON.stringify(queue)); } catch (e) {} };
+let flushing = false;
+const normAtt = a => { const o = {}; Object.keys(a || {}).forEach(d => { const ids = Object.keys(a[d]); if (ids.length) { o[d] = {}; ids.forEach(i => o[d][i] = 1); } }); return o; };
+function setSync(s) {
+  const el = document.getElementById('syncMsg'); if (!el) return;
+  el.dataset.s = s;
+  el.textContent = !API ? 'Los datos se guardan solo en este dispositivo.' : s === 'err' ? 'Sin conexión · los cambios se enviarán cuando vuelva.' : s === 'busy' ? 'Sincronizando…' : 'Sincronizado · todos los dispositivos ven la misma lista.';
+}
+function op(o) { if (!API) return; queue.push(o); saveQ(); flush(); }
+async function flush() {
+  if (!API || flushing || !queue.length) return;
+  flushing = true; const n = queue.length; let ok = true;
+  try {
+    const res = await fetch(API, { method: 'POST', body: JSON.stringify({ ops: queue.slice(0, n) }) });
+    const r = await res.json();
+    queue = queue.slice(n); saveQ(); setSync('ok');
+    if (!queue.length && r.state) applyRemote(r.state);
+  } catch (e) { ok = false; setSync('err'); setTimeout(flush, 7000); }
+  flushing = false;
+  if (ok && queue.length) flush();
+}
+function applyRemote(st) {
+  if (!st || !st.members) return;
+  if (!st.members.length && S.members.length) { // servidor vacío: sembrar con lo que ya hay en este dispositivo
+    op({ t: 'replaceAll', members: S.members, att: normAtt(S.att), meeting: S.meeting }); return;
+  }
+  const next = { meeting: st.meeting || S.meeting, members: st.members, att: normAtt(st.att) };
+  const cur = JSON.stringify({ meeting: S.meeting, members: S.members, att: normAtt(S.att) });
+  if (JSON.stringify(next) === cur) return;
+  S = next; save(); renderHead(); renderList();
+}
+async function pull() {
+  if (!API) return;
+  await flush(); if (queue.length) return;
+  try { setSync('busy'); const r = await fetch(API + '?t=' + Date.now()); applyRemote(await r.json()); setSync('ok'); }
+  catch (e) { setSync('err'); }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); });
+setInterval(() => { if (!document.hidden) pull(); }, 20000);
+
 const pad = n => String(n).padStart(2, '0');
 const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
 let date = todayStr(), filter = 'all', minFilter = 'all', query = '';
@@ -173,6 +217,7 @@ function toggle(id, row) {
   if (d[id]) delete d[id]; else d[id] = Date.now();
   save();
   const on = !!d[id];
+  op({ t: 'att', date, id, on });
   buzz(on ? 14 : 6);
   row.classList.toggle('in', on);
   if (on) { row.classList.remove('pop'); void row.offsetWidth; row.classList.add('pop'); }
@@ -281,15 +326,17 @@ $('#personForm').addEventListener('submit', e => {
   const data = { nombres, apellidos, celular, edad, sexo: pickSex, ministerio: pickMin };
   if (editingId) {
     Object.assign(S.members.find(x => x.id === editingId), data);
+    op({ t: 'upsert', m: S.members.find(x => x.id === editingId) });
     save(); closeSheets(); renderList(); return toast('Cambios guardados');
   }
   const dup = S.members.find(m => m.celular && m.celular === celular);
   if (dup) {
-    dayAtt()[dup.id] = Date.now(); save(); closeSheets(); renderList();
+    dayAtt()[dup.id] = Date.now(); op({ t: 'att', date, id: dup.id, on: true }); save(); closeSheets(); renderList();
     return toast(`${dup.nombres} ya existía · marcada ✓`);
   }
   const m = { id: uid(), ...data, nuevo: date };
   S.members.push(m); dayAtt()[m.id] = Date.now(); save();
+  op({ t: 'upsert', m }); op({ t: 'att', date, id: m.id, on: true });
   closeSheets(); $('#q').value = ''; query = ''; $('#qClear').hidden = true; minFilter = 'all'; filter = 'all';
   $$('#seg button').forEach(x => x.classList.toggle('on', x.dataset.f === 'all')); $('.seg-pill').style.transform = 'translateX(0)';
   renderList();
@@ -301,6 +348,7 @@ $('#btnDelPerson').onclick = () => {
   if (!m || !confirm(`¿Eliminar a ${full(m)} de la lista?`)) return;
   S.members = S.members.filter(x => x.id !== editingId);
   Object.values(S.att).forEach(d => delete d[editingId]);
+  op({ t: 'del', id: editingId });
   save(); closeSheets(); renderList(); toast('Eliminada');
 };
 
@@ -366,7 +414,11 @@ $('#btnWA').onclick = () => shareWA();
 /* ---------- Ajustes / importar ---------- */
 const openMenu = () => { $('#setName').value = S.meeting; openSheet('#sheetMenu'); };
 $('#btnMenu').onclick = openMenu; $('#btnMenu2').onclick = openMenu;
-$('#setName').addEventListener('input', e => { S.meeting = e.target.value.trim() || 'RAYCES'; save(); renderHead(); });
+let nameT;
+$('#setName').addEventListener('input', e => {
+  S.meeting = e.target.value.trim() || 'RAYCES'; save(); renderHead();
+  clearTimeout(nameT); nameT = setTimeout(() => op({ t: 'meeting', name: S.meeting }), 700);
+});
 $('#btnImport').onclick = () => openSheet('#sheetImport');
 
 function upsert(p) {
@@ -387,7 +439,7 @@ function splitName(parts) {
   if (parts.length === 3) return [parts[0], parts.slice(1).join(' ')];
   return [parts.slice(0, 2).join(' '), parts.slice(2).join(' ')];
 }
-function finishImport(n, label) { save(); renderList(); closeSheets(); toast(n ? `${n} ${label} agregadas` : 'No había nadie nuevo'); }
+function finishImport(n, label) { save(); op({ t: 'bulk', members: S.members }); renderList(); closeSheets(); toast(n ? `${n} ${label} agregadas` : 'No había nadie nuevo'); }
 
 // Texto pegado: "Nombres Apellidos, edad, ministerio"
 function importText(text) {
@@ -451,13 +503,13 @@ $('#fileJSON').onchange = async e => {
   try {
     const r = JSON.parse(await f.text());
     if (!r.members || !confirm('Esto reemplazará los datos actuales. ¿Continuar?')) return;
-    S = r; save(); closeSheets(); renderHead(); renderList(); toast('Copia restaurada');
+    S = r; save(); op({ t: 'replaceAll', members: S.members, att: normAtt(S.att), meeting: S.meeting }); closeSheets(); renderHead(); renderList(); toast('Copia restaurada');
   } catch (err) { toast('Archivo no válido'); }
   e.target.value = '';
 };
 $('#btnClearDay').onclick = () => {
   if (!confirm('¿Quitar todas las asistencias de esta fecha?')) return;
-  delete S.att[date]; save(); closeSheets(); renderList(); toast('Asistencia limpiada');
+  delete S.att[date]; op({ t: 'clearDay', date }); save(); closeSheets(); renderList(); toast('Asistencia limpiada');
 };
 
 /* ---------- Navegación: inicio · reuniones · asistentes ---------- */
@@ -600,4 +652,5 @@ $('#btnHomeFin').onclick = () => setView('home');
 $('#q').placeholder = matchMedia('(min-width:1024px)').matches ? 'Buscar persona   ( / )' : 'Buscar persona';
 history.replaceState({ v: 'home' }, '', '#home');
 renderHead(); renderList(); renderPages(); icons();
+setSync('ok'); pull();
 })();
