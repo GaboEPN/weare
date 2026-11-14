@@ -40,7 +40,9 @@ async function flush() {
 function applyRemote(st) {
   if (!st || !st.members) return;
   if (!st.members.length && S.members.length) { // servidor vacío: sembrar con lo que ya hay en este dispositivo
-    op({ t: 'replaceAll', members: S.members, att: normAtt(S.att), meeting: S.meeting }); return;
+    op({ t: 'bulk', members: S.members });
+    const a = normAtt(S.att); Object.keys(a).forEach(d => Object.keys(a[d]).forEach(id => op({ t: 'att', date: d, id, on: true })));
+    return;
   }
   const next = { meeting: st.meeting || S.meeting, members: st.members, att: normAtt(st.att) };
   const cur = JSON.stringify({ meeting: S.meeting, members: S.members, att: normAtt(S.att) });
@@ -225,24 +227,10 @@ function toggle(id, row) {
   if (filter !== 'all') setTimeout(renderList, 380);
 }
 
-(() => {
-  let timer = null, fired = false, sx = 0, sy = 0;
-  const list = $('#list');
-  list.addEventListener('pointerdown', e => {
-    const r = e.target.closest('.person'); if (!r) return;
-    fired = false; sx = e.clientX; sy = e.clientY;
-    timer = setTimeout(() => { fired = true; buzz(20); openPerson(r.dataset.id); }, 550);
-  });
-  const cancel = () => clearTimeout(timer);
-  list.addEventListener('pointermove', e => { if (Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) > 10) cancel(); });
-  list.addEventListener('pointerup', cancel); list.addEventListener('pointercancel', cancel);
-  list.addEventListener('contextmenu', e => { const r = e.target.closest('.person'); if (r) { e.preventDefault(); openPerson(r.dataset.id); } });
-  list.addEventListener('click', e => {
-    const r = e.target.closest('.person'); if (!r) return;
-    if (fired) { fired = false; return; }
-    toggle(r.dataset.id, r);
-  });
-})();
+$('#list').addEventListener('click', e => {
+  const r = e.target.closest('.person'); if (!r) return;
+  toggle(r.dataset.id, r);
+});
 
 // botones con data-act (dock, panel de escritorio, fila de agregar)
 document.addEventListener('click', e => {
@@ -296,18 +284,12 @@ $('#minPick').addEventListener('click', e => { const b = e.target.closest('butto
 $('#sexSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; pickSex = pickSex === b.dataset.v ? '' : b.dataset.v; buzz(6); autoMin(); });
 $('#personForm').edad.addEventListener('input', autoMin);
 
-function openPerson(id) {
-  editingId = id || null;
+function openPerson() {
   const f = $('#personForm'); f.reset();
-  const m = id && S.members.find(x => x.id === id);
-  $('#personTitle').textContent = m ? 'Editar persona' : 'Persona nueva';
-  $('#personBtn').textContent = m ? 'Guardar cambios' : 'Registrar y marcar presente';
-  $('#btnDelPerson').hidden = !m;
+  $('#personTitle').textContent = 'Persona nueva';
+  $('#personBtn').textContent = 'Registrar y marcar presente';
   pickMin = ''; pickSex = ''; minTouched = false;
-  if (m) {
-    f.nombres.value = m.nombres; f.apellidos.value = m.apellidos; f.celular.value = m.celular || '';
-    f.edad.value = m.edad ?? ''; pickSex = m.sexo || ''; pickMin = m.ministerio || ''; minTouched = true;
-  } else if (query) {
+  if (query) {
     const p = query.trim().split(/\s+/); f.nombres.value = titleCase(p[0] || ''); f.apellidos.value = titleCase(p.slice(1).join(' '));
   }
   syncPick();
@@ -324,11 +306,6 @@ $('#personForm').addEventListener('submit', e => {
   if (edad === '' || edad < 0 || edad > 110) return toast('Escribe la edad'), f.edad.focus();
   if (celular.replace(/\D/g, '').length < 7) return toast('Revisa el número de celular'), f.celular.focus();
   const data = { nombres, apellidos, celular, edad, sexo: pickSex, ministerio: pickMin };
-  if (editingId) {
-    Object.assign(S.members.find(x => x.id === editingId), data);
-    op({ t: 'upsert', m: S.members.find(x => x.id === editingId) });
-    save(); closeSheets(); renderList(); return toast('Cambios guardados');
-  }
   const dup = S.members.find(m => m.celular && m.celular === celular);
   if (dup) {
     dayAtt()[dup.id] = Date.now(); op({ t: 'att', date, id: dup.id, on: true }); save(); closeSheets(); renderList();
@@ -343,14 +320,6 @@ $('#personForm').addEventListener('submit', e => {
   buzz([12, 40, 12]); toast(`${nombres} registrado/a ✓`);
   setTimeout(() => { const r = document.querySelector(`[data-id="${m.id}"]`); if (r) { r.scrollIntoView({ block: 'center', behavior: 'smooth' }); r.classList.add('pop'); } }, 250);
 });
-$('#btnDelPerson').onclick = () => {
-  const m = S.members.find(x => x.id === editingId);
-  if (!m || !confirm(`¿Eliminar a ${full(m)} de la lista?`)) return;
-  S.members = S.members.filter(x => x.id !== editingId);
-  Object.values(S.att).forEach(d => delete d[editingId]);
-  op({ t: 'del', id: editingId });
-  save(); closeSheets(); renderList(); toast('Eliminada');
-};
 
 /* ---------- Exportar ---------- */
 function reportRows(dt = date) {
@@ -425,11 +394,7 @@ function upsert(p) {
   if (!p.nombres) return 0;
   const key = norm(`${p.nombres} ${p.apellidos}`);
   const ex = S.members.find(m => norm(full(m)) === key || (p.celular && m.celular === p.celular));
-  if (ex) {
-    let ch = false;
-    for (const k of ['edad', 'sexo', 'ministerio', 'celular']) if ((ex[k] === '' || ex[k] == null) && p[k] !== '' && p[k] != null) { ex[k] = p[k]; ch = true; }
-    return 0;
-  }
+  if (ex) return 0; // las personas que ya existen no se modifican
   S.members.push({ id: uid(), nombres: p.nombres, apellidos: p.apellidos, celular: p.celular || '', edad: p.edad ?? '', sexo: p.sexo || '', ministerio: p.ministerio || '' });
   return 1;
 }
@@ -497,20 +462,6 @@ $('#fileCSV').onchange = async e => {
   e.target.value = '';
 };
 $('#btnBackup').onclick = () => { download(`onefamily-copia-${todayStr()}.json`, new Blob([JSON.stringify(S)], { type: 'application/json' })); toast('Copia guardada'); };
-$('#btnRestore').onclick = () => $('#fileJSON').click();
-$('#fileJSON').onchange = async e => {
-  const f = e.target.files[0]; if (!f) return;
-  try {
-    const r = JSON.parse(await f.text());
-    if (!r.members || !confirm('Esto reemplazará los datos actuales. ¿Continuar?')) return;
-    S = r; save(); op({ t: 'replaceAll', members: S.members, att: normAtt(S.att), meeting: S.meeting }); closeSheets(); renderHead(); renderList(); toast('Copia restaurada');
-  } catch (err) { toast('Archivo no válido'); }
-  e.target.value = '';
-};
-$('#btnClearDay').onclick = () => {
-  if (!confirm('¿Quitar todas las asistencias de esta fecha?')) return;
-  delete S.att[date]; op({ t: 'clearDay', date }); save(); closeSheets(); renderList(); toast('Asistencia limpiada');
-};
 
 /* ---------- Navegación: inicio · reuniones · asistentes ---------- */
 const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
@@ -622,10 +573,7 @@ function showPerson(id) {
     <div class="inset">${row('Edad', m.edad !== '' && m.edad != null ? esc(m.edad) + ' años' : '—')}${row('Celular', m.celular ? esc(m.celular) : '—')}${row('Registrada', m.nuevo ? esc(fmtD(m.nuevo, { day: 'numeric', month: 'short', year: 'numeric' })) : 'Lista inicial')}</div>
     <p class="cap">Historial</p>
     <div class="inset hlist">${md.map(d => `<div class="hrow"><span>${esc(longD(d))}</span><i class="hs ${S.att[d][id] ? 'ok' : ''}">${S.att[d][id] ? 'Asistió' : 'No asistió'}</i></div>`).join('') || '<p class="muted p">Aún no hay reuniones registradas.</p>'}</div>
-    <div class="stack top">
-      ${m.celular ? `<a class="pill ghost wide" href="tel:${esc(m.celular)}"><i data-lucide="phone"></i><span>Llamar</span></a>` : ''}
-      <button class="pill solid wide" data-edit="${id}"><i data-lucide="pencil"></i><span>Editar datos</span></button>
-    </div>`;
+    ${m.celular ? `<div class="stack top"><a class="pill solid wide" href="tel:${esc(m.celular)}"><i data-lucide="phone"></i><span>Llamar</span></a></div>` : ''}`;
   icons(); openSheet('#sheetPInfo');
 }
 
@@ -645,7 +593,6 @@ document.addEventListener('click', e => {
   if ((el = t.closest('[data-open]'))) return startMeeting(el.dataset.open);
   if ((el = t.closest('[data-wa]'))) return shareWA(el.dataset.wa);
   if ((el = t.closest('[data-xls]'))) { download(fileName(el.dataset.xls), xlsxBlob(el.dataset.xls)); return toast('Excel descargado'); }
-  if ((el = t.closest('[data-edit]'))) return openPerson(el.dataset.edit);
 });
 $('#btnHomeFin').onclick = () => setView('home');
 

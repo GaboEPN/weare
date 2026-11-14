@@ -192,7 +192,6 @@
     <p class="hint" id="minHint"></p>
 
     <div class="row-actions">
-      <button type="button" class="pill danger" id="btnDelPerson" hidden aria-label="Eliminar"><i data-lucide="trash-2"></i></button>
       <button type="submit" class="pill solid grow"><i data-lucide="check"></i><span id="personBtn">Registrar y marcar</span></button>
     </div>
   </form>
@@ -253,12 +252,9 @@
   </div>
   <p class="cap">Datos</p>
   <div class="inset menu">
-    <button class="cell btn" id="btnBackup"><i data-lucide="database-backup"></i><span>Guardar copia de seguridad</span><i data-lucide="chevron-right" class="chev"></i></button>
-    <button class="cell btn" id="btnRestore"><i data-lucide="history"></i><span>Restaurar copia</span><i data-lucide="chevron-right" class="chev"></i></button>
-    <button class="cell btn red" id="btnClearDay"><i data-lucide="eraser"></i><span>Limpiar asistencia de este día</span></button>
+    <button class="cell btn" id="btnBackup"><i data-lucide="database-backup"></i><span>Descargar copia de seguridad</span><i data-lucide="chevron-right" class="chev"></i></button>
   </div>
   <input type="file" id="fileCSV" accept=".xlsx,.xls,.csv,text/csv" hidden>
-  <input type="file" id="fileJSON" accept=".json,application/json" hidden>
   <p class="foot" id="syncMsg">Los datos se guardan solo en este dispositivo.</p>
 </section>
 
