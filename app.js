@@ -425,7 +425,7 @@ $('#fileCSV').onchange = async e => {
   } catch (err) { toast('No pude leer el archivo'); }
   e.target.value = '';
 };
-$('#btnBackup').onclick = () => { download(`weare-copia-${todayStr()}.json`, new Blob([JSON.stringify(S)], { type: 'application/json' })); toast('Copia guardada'); };
+$('#btnBackup').onclick = () => { download(`onefamily-copia-${todayStr()}.json`, new Blob([JSON.stringify(S)], { type: 'application/json' })); toast('Copia guardada'); };
 $('#btnRestore').onclick = () => $('#fileJSON').click();
 $('#fileJSON').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;

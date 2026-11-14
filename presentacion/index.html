@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>OneFamily ICT · Presentación</title>
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--ease:cubic-bezier(.16,1,.3,1);--spring:cubic-bezier(.34,1.56,.64,1);--blue:#2f6bff;--orange:#ff5f1f;--ink:#111;--gray:#6e6e73}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#000;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased;display:grid;place-items:center;user-select:none;-webkit-user-select:none}
+
+/* Escenario vertical 9:16 */
+.stage{position:relative;height:min(100dvh,calc(100vw * 16 / 9));aspect-ratio:9/16;container-type:size;overflow:hidden;background:#000;cursor:pointer}
+@media (min-aspect-ratio:9/14){.stage{border-radius:clamp(0px,2.2vh,22px);box-shadow:0 0 0 1px rgba(255,255,255,.08),0 40px 120px rgba(0,0,0,.6)}}
+
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8cqw;visibility:hidden}
+.slide.on{visibility:visible}
+.dark{background:#000;color:#f5f5f7}
+.light{background:#f5f5f7;color:var(--ink)}
+.fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:30;transition:opacity .55s ease}
+.fade.on{opacity:1}
+
+/* Revelado estilo Apple: sube, se enfoca y aparece */
+.rv{opacity:0;transform:translateY(3.2cqw);filter:blur(1.6cqw)}
+.on .rv{animation:rv 1.1s var(--ease) both;animation-delay:var(--d,0s)}
+@keyframes rv{to{opacity:1;transform:none;filter:none}}
+.pop{opacity:0;transform:scale(.88) translateY(3cqw)}
+.on .pop{animation:pop .9s var(--spring) both;animation-delay:var(--d,0s)}
+@keyframes pop{to{opacity:1;transform:none}}
+
+.gt{background:linear-gradient(135deg,#fff 10%,#9cc2ff 55%,#2f6bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.h{font-weight:700;letter-spacing:-.045em;line-height:1.02}
+
+/* ---------- 1. El problema ---------- */
+.s1 .l{font-size:9.4cqw;font-weight:700;letter-spacing:-.04em;line-height:1.08;color:#f5f5f7;margin:1.6cqw 0}
+.s1 .eyebrow{font-size:4.2cqw;font-weight:600;color:#86868b;letter-spacing:.02em;margin-bottom:6cqw}
+.s1 .old{position:absolute;left:8cqw;right:8cqw;top:50%;transform:translateY(-50%)}
+.on.s1 .old .l{opacity:0;animation:lineIn 1s var(--ease) both,dim .9s ease both;animation-delay:var(--d),var(--k)}
+@keyframes lineIn{from{opacity:0;transform:translateY(3cqw);filter:blur(1.6cqw)}to{opacity:1;transform:none;filter:none}}
+@keyframes dim{to{opacity:0;transform:scale(.97);filter:blur(1cqw)}}
+.s1 .old .eyebrow{opacity:0}
+.on.s1 .old .eyebrow{animation:lineIn 1s var(--ease) both,dim .9s ease both;animation-delay:.2s,var(--k)}
+.s1 .new{position:relative;opacity:0}
+.on.s1 .new{animation:lineIn 1.4s var(--ease) both;animation-delay:5.3s}
+.s1 .new .big{font-size:15.5cqw;font-weight:800;letter-spacing:-.05em;line-height:1}
+.s1 .new .sm{font-size:5cqw;color:#86868b;font-weight:600;margin-top:5cqw;letter-spacing:-.01em}
+
+/* ---------- 2. Presentamos ---------- */
+.s2{background:radial-gradient(120% 70% at 50% 42%,#0c2a66 0%,#050d22 52%,#000 100%)}
+.s2 .logo{width:26cqw;height:26cqw;border-radius:6.4cqw;box-shadow:0 0 14cqw rgba(47,107,255,.65),0 3cqw 8cqw rgba(0,0,0,.5);margin-bottom:9cqw}
+.on.s2 .logo{animation:logoIn 1.6s var(--spring) both .5s}
+.s2 .logo{opacity:0;transform:scale(.4)}
+@keyframes logoIn{0%{opacity:0;transform:scale(.4) translateY(6cqw)}100%{opacity:1;transform:none}}
+.s2 .pre{font-size:5cqw;font-weight:600;color:#a1a1a6;letter-spacing:.02em;margin-bottom:3cqw}
+.s2 .name{font-size:15.2cqw}
+.s2 .ict{font-size:34cqw;letter-spacing:-.06em;margin-top:-1cqw}
+.s2 .sub{font-size:4.8cqw;color:#a1a1a6;font-weight:500;margin-top:7cqw;line-height:1.35}
+
+/* ---------- 3. Un toque ---------- */
+.s3{justify-content:flex-start;padding-top:12cqw}
+.s3 .t{font-size:18cqw}
+.s3 .p{font-size:5.4cqw;font-weight:600;color:var(--gray);margin-top:3cqw}
+.phone{position:absolute;left:50%;bottom:-14cqw;width:66cqw;height:112cqw;margin-left:-33cqw;border-radius:10cqw;background:#0a1f44;padding:1.3cqw;box-shadow:0 5cqw 14cqw rgba(0,0,0,.28),0 0 0 .3cqw rgba(0,0,0,.4) inset}
+.screen{width:100%;height:100%;border-radius:8.8cqw;background:#f4f7fc;overflow:hidden;padding:7cqw 4.5cqw 0;text-align:left;position:relative}
+.screen .nt{position:absolute;top:2cqw;left:50%;width:20cqw;height:5cqw;margin-left:-10cqw;border-radius:3cqw;background:#0a1f44}
+.scr-h{display:flex;justify-content:space-between;align-items:center;margin:2cqw 0 3.5cqw}
+.scr-h small{display:block;font-size:2.2cqw;font-weight:700;color:var(--blue);letter-spacing:.08em}
+.scr-h b{font-size:8cqw;font-weight:800;letter-spacing:-.04em;background:linear-gradient(135deg,#0a1f44,#2f6bff);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1}
+.mini-ring{width:13cqw;height:13cqw;border-radius:50%;background:conic-gradient(var(--blue) var(--p,0%),rgba(47,107,255,.14) 0);display:grid;place-items:center;font-size:4.6cqw;font-weight:800;color:#0a1f44;position:relative}
+.mini-ring::before{content:"";position:absolute;inset:1.6cqw;border-radius:50%;background:#f4f7fc}
+.mini-ring span{position:relative}
+.rows{background:#fff;border-radius:5cqw;box-shadow:0 .3cqw 0 rgba(10,31,68,.06);overflow:hidden}
+.r{display:flex;align-items:center;gap:3cqw;padding:2.6cqw 3.2cqw;position:relative;transition:background .4s}
+.r+.r::before{content:"";position:absolute;top:0;left:15cqw;right:0;height:.25cqw;background:rgba(10,31,68,.07)}
+.r .av{width:9.4cqw;height:9.4cqw;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:3.2cqw;font-weight:700;background:linear-gradient(135deg,var(--a),#12306b);flex:none}
+.r .w{flex:1;min-width:0}
+.r .w b{display:block;font-size:3.7cqw;font-weight:600;letter-spacing:-.02em;color:#0b1630}
+.r .w i{font-style:normal;font-size:2.7cqw;color:#6b7a99;font-weight:500}
+.r .w u{text-decoration:none;font-size:2.1cqw;font-weight:700;letter-spacing:.04em;padding:.3cqw 1.6cqw;border-radius:5cqw;margin-left:1.4cqw;background:hsl(var(--h) 90% 93%);color:hsl(var(--h) 60% 30%)}
+.r .c{width:6.4cqw;height:6.4cqw;border-radius:50%;border:.5cqw solid rgba(10,31,68,.18);display:grid;place-items:center;flex:none}
+.r .c svg{width:3.6cqw;height:3.6cqw;fill:none;stroke:#fff;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:24;stroke-dashoffset:24}
+.on .r{animation:rowBg 9s ease infinite;animation-delay:calc(2.2s + var(--i) * 1.1s)}
+.on .r .c{animation:chkBg 9s ease infinite;animation-delay:calc(2.2s + var(--i) * 1.1s)}
+.on .r .c svg{animation:chkDraw 9s ease infinite;animation-delay:calc(2.2s + var(--i) * 1.1s)}
+@keyframes rowBg{0%,4%{background:#fff}8%,80%{background:#e9f0ff}90%,100%{background:#fff}}
+@keyframes chkBg{0%,4%{background:transparent;border-color:rgba(10,31,68,.18);transform:scale(1)}7%{transform:scale(1.28)}10%,80%{background:var(--blue);border-color:var(--blue);transform:scale(1);box-shadow:0 1cqw 2.4cqw rgba(47,107,255,.45)}90%,100%{background:transparent;border-color:rgba(10,31,68,.18);box-shadow:none}}
+@keyframes chkDraw{0%,5%{stroke-dashoffset:24}11%,80%{stroke-dashoffset:0}90%,100%{stroke-dashoffset:24}}
+.on .mini-ring{animation:ringGrow 9s ease infinite;animation-delay:2.2s}
+@property --p{syntax:'<percentage>';inherits:true;initial-value:0%}
+@keyframes ringGrow{0%{--p:0%}20%{--p:20%}40%{--p:45%}60%{--p:70%}80%{--p:85%}92%,100%{--p:0%}}
+.s3 .phone{opacity:0;transform:translateY(12cqw)}
+.on.s3 .phone{animation:phoneUp 1.5s var(--ease) both 1s}
+@keyframes phoneUp{to{opacity:1;transform:none}}
+
+/* ---------- 4. Bento ---------- */
+.s4{background:#f5f5f7;justify-content:center;padding:6cqw}
+.s4 .head{font-size:9cqw;margin-bottom:1cqw}
+.s4 .head2{font-size:4.4cqw;font-weight:600;color:var(--gray);margin-bottom:3.6cqw}
+.bento{display:grid;grid-template-columns:1fr 1fr;gap:2.6cqw;width:100%;text-align:left}
+.tile{background:#fff;border-radius:5.4cqw;padding:4cqw;min-height:26cqw;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.tile .k{font-size:5.6cqw;font-weight:700;letter-spacing:-.035em;line-height:1.08}
+.tile .d{font-size:3.5cqw;font-weight:500;color:var(--gray);margin-top:1.4cqw;line-height:1.3}
+.tile.w2{grid-column:span 2}
+.tile.dk{background:#0a1f44;color:#fff}.tile.dk .d{color:#9db3dd}
+.tile.bl{background:linear-gradient(140deg,#4b8bff,#1d4fd8);color:#fff}.tile.bl .d{color:#d6e4ff}
+.tile.gr{background:#25d366;color:#fff}.tile.gr .d{color:#e6ffee}
+.tile.bk{background:#000;color:#fff}.tile.bk .d{color:#a1a1a6}
+.big-n{font-size:15cqw;font-weight:800;letter-spacing:-.06em;line-height:.9}
+.row{display:flex;align-items:center;gap:4cqw}
+.rg{width:21cqw;height:21cqw;flex:none;transform:rotate(-90deg)}
+.rg circle{fill:none;stroke-width:11;stroke-linecap:round}
+.rg .a{stroke:rgba(47,107,255,.14)}.rg .b{stroke:var(--blue);stroke-dasharray:263.9;stroke-dashoffset:263.9}
+.on .rg .b{animation:ringIn 2.2s var(--ease) both 1s}
+@keyframes ringIn{to{stroke-dashoffset:34}}
+.pills{display:flex;flex-wrap:wrap;gap:1.2cqw;margin-top:2.4cqw}
+.pills i{font-style:normal;font-size:2.7cqw;font-weight:700;letter-spacing:.03em;padding:.8cqw 2.2cqw;border-radius:5cqw;background:hsl(var(--h) 90% 93%);color:hsl(var(--h) 60% 30%)}
+.ico{width:9cqw;height:9cqw;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.2);margin-bottom:2cqw}
+.ico svg{width:5cqw;height:5cqw;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- 5. Cero papel + cierre ---------- */
+.s5{background:#f7f7f8}
+.s5 .a,.s5 .b{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8cqw}
+.s5 .num{font-size:30cqw;font-weight:800;letter-spacing:-.065em;color:var(--orange);line-height:.95}
+.s5 .num2{font-size:24cqw;font-weight:800;letter-spacing:-.06em;color:var(--orange);line-height:1}
+.s5 .cap{font-size:5.2cqw;font-weight:600;color:#4a4a4f;margin-top:5cqw;letter-spacing:-.01em}
+.s5 .a{opacity:0}
+.on.s5 .a{animation:aIn 1.2s var(--ease) both .3s,aOut .8s ease both 4.6s}
+@keyframes aIn{from{opacity:0;transform:translateY(4cqw);filter:blur(1.8cqw)}to{opacity:1;transform:none;filter:none}}
+@keyframes aOut{to{opacity:0;transform:scale(.96);filter:blur(1.2cqw)}}
+.s5 .b{visibility:hidden}
+.on.s5 .b{visibility:visible}
+.s5 .logo{width:22cqw;height:22cqw;border-radius:5.4cqw;box-shadow:0 2cqw 7cqw rgba(10,31,68,.3);margin-bottom:7cqw}
+.s5 .fam{font-size:13.4cqw;color:#0a1f44}
+.s5 .fam em{font-style:normal;color:var(--blue)}
+.s5 .tag{font-size:5.6cqw;font-weight:600;color:var(--gray);margin-top:4cqw;letter-spacing:-.01em}
+.s5 .url{margin-top:9cqw;padding:3.2cqw 6cqw;border-radius:99cqw;background:#0a1f44;color:#fff;font-size:3.8cqw;font-weight:600;letter-spacing:.01em}
+
+/* ---------- Controles ---------- */
+.dots{position:absolute;left:0;right:0;bottom:3.2cqw;display:flex;justify-content:center;gap:2cqw;z-index:40;mix-blend-mode:difference;pointer-events:none}
+.dots i{width:1.8cqw;height:1.8cqw;border-radius:50%;background:#fff;opacity:.35;transition:opacity .4s,transform .4s var(--spring)}
+.dots i.on{opacity:1;transform:scale(1.35)}
+.hint{position:absolute;top:4cqw;left:0;right:0;text-align:center;font-size:3cqw;font-weight:600;color:#fff;mix-blend-mode:difference;opacity:0;z-index:40;pointer-events:none;letter-spacing:.04em}
+.hint.on{animation:hint 4s ease 1.2s both}
+@keyframes hint{0%,100%{opacity:0}20%,70%{opacity:.7}}
+@media (prefers-reduced-motion:reduce){.rv,.pop{opacity:1!important;transform:none!important;filter:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+
+  <!-- 1 · El problema -->
+  <section class="slide dark s1" data-i="0">
+    <div class="old" style="--k:4.4s">
+      <p class="eyebrow">Cada sábado, de 4 a 6</p>
+      <p class="l" style="--d:.9s">Anotar a mano.</p>
+      <p class="l" style="--d:1.9s">Preguntar quién es quién.</p>
+      <p class="l" style="--d:2.9s">Pasarlo todo al sistema.</p>
+    </div>
+    <div class="new">
+      <div class="big">Ya no más papel</div>
+      <p class="sm">en el registro de RAYCES.</p>
+    </div>
+  </section>
+
+  <!-- 2 · Presentamos -->
+  <section class="slide dark s2" data-i="1">
+    <img class="logo" src="../icon.svg" alt="">
+    <p class="pre rv" style="--d:1.4s">Presentamos</p>
+    <h2 class="h name gt rv" style="--d:1.7s">OneFamily</h2>
+    <h2 class="h ict gt rv" style="--d:2s">ICT</h2>
+    <p class="sub rv" style="--d:2.8s">La asistencia de tu iglesia,<br>en la palma de tu mano.</p>
+  </section>
+
+  <!-- 3 · Un toque -->
+  <section class="slide light s3" data-i="2">
+    <h2 class="h t rv" style="--d:.2s">Un toque.</h2>
+    <p class="p rv" style="--d:.7s">Y ya estás presente.</p>
+    <div class="phone">
+      <div class="screen">
+        <span class="nt"></span>
+        <div class="scr-h"><div><small>REUNIÓN</small><b>RAYCES</b></div><div class="mini-ring"><span>5</span></div></div>
+        <div class="rows">
+          <div class="r" style="--i:0"><span class="av" style="--a:#3b78ff">AF</span><span class="w"><b>Alexandra</b><i>Fierro</i><u style="--h:290">DAMAS</u></span><span class="c"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></div>
+          <div class="r" style="--i:1"><span class="av" style="--a:#2a9d8f">AB</span><span class="w"><b>Andrés</b><i>Bravo</i><u style="--h:165">MJC</u></span><span class="c"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></div>
+          <div class="r" style="--i:2"><span class="av" style="--a:#6a5ae0">BO</span><span class="w"><b>Blanca</b><i>Ochoa</i><u style="--h:44">DORADOS</u></span><span class="c"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></div>
+          <div class="r" style="--i:3"><span class="av" style="--a:#3b78ff">BT</span><span class="w"><b>Bryan</b><i>Tapia</i><u style="--h:212">MAYO</u></span><span class="c"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></div>
+          <div class="r" style="--i:4"><span class="av" style="--a:#2a9d8f">CZ</span><span class="w"><b>Camila</b><i>Zambrano</i><u style="--h:165">MJC</u></span><span class="c"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · Todo en uno -->
+  <section class="slide light s4" data-i="3">
+    <h2 class="h head rv" style="--d:.1s">Todo en un solo lugar.</h2>
+    <p class="head2 rv" style="--d:.4s">Pensado para tu iglesia.</p>
+    <div class="bento">
+      <div class="tile w2 pop" style="--d:.6s">
+        <div class="row">
+          <svg class="rg" viewBox="0 0 100 100"><circle class="a" cx="50" cy="50" r="42"/><circle class="b" cx="50" cy="50" r="42"/></svg>
+          <div><div class="k">Asistencia<br>en vivo</div><div class="d">Mira cuántos van llegando, al instante.</div></div>
+        </div>
+      </div>
+      <div class="tile pop" style="--d:.85s">
+        <div><div class="k">7 ministerios</div><div class="pills">
+          <i style="--h:340">PAREJAS</i><i style="--h:28">MIC</i><i style="--h:165">MJC</i><i style="--h:212">MAYO</i><i style="--h:250">PEC</i><i style="--h:290">DAMAS</i><i style="--h:44">DORADOS</i></div></div>
+      </div>
+      <div class="tile bl pop" style="--d:1.05s">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></div>
+        <div><div class="k">Visitantes en segundos</div><div class="d">Nombres, edad y celular.</div></div>
+      </div>
+      <div class="tile dk pop" style="--d:1.25s">
+        <div class="k">Excel</div><div class="d">Importa tu lista y descarga el reporte listo.</div>
+      </div>
+      <div class="tile gr pop" style="--d:1.45s">
+        <div class="k">WhatsApp</div><div class="d">Envía la asistencia con un toque.</div>
+      </div>
+      <div class="tile bk w2 pop" style="--d:1.7s">
+        <div class="row" style="justify-content:space-between"><div><div class="k">Celular y PC</div><div class="d">Un enlace. Cualquier pantalla.</div></div><div class="big-n">$0</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · Cero papel + cierre -->
+  <section class="slide light s5" data-i="4">
+    <div class="a">
+      <div class="num">0 papel</div>
+      <p class="cap">en el registro de asistencia.</p>
+    </div>
+    <div class="b">
+      <img class="logo rv" style="--d:5.4s" src="../icon.svg" alt="">
+      <h2 class="h fam rv" style="--d:5.7s">OneFamily <em>ICT</em></h2>
+      <p class="tag rv" style="--d:6.2s">Una familia. Un toque.</p>
+      <p class="url rv" style="--d:6.8s">gaboepn.github.io/weare</p>
+    </div>
+  </section>
+
+  <div class="fade" id="fade"></div>
+  <div class="dots" id="dots"></div>
+  <div class="hint" id="hint">TOCA PARA AVANZAR</div>
+</div>
+
+<script>
+(() => {
+  const slides = [...document.querySelectorAll('.slide')];
+  const fade = document.getElementById('fade'), dotsEl = document.getElementById('dots'), hint = document.getElementById('hint');
+  slides.forEach((_, k) => dotsEl.appendChild(document.createElement('i')));
+  const dots = [...dotsEl.children];
+  let cur = -1, busy = false;
+
+  function show(n) {
+    slides.forEach((s, k) => s.classList.toggle('on', k === n));
+    dots.forEach((d, k) => d.classList.toggle('on', k === n));
+    cur = n;
+  }
+  function go(n) {
+    if (busy || n < 0 || n >= slides.length || n === cur) return;
+    busy = true;
+    fade.classList.add('on');                       // se oscurece
+    setTimeout(() => { show(n); setTimeout(() => { fade.classList.remove('on'); busy = false; }, 140); }, 580);
+  }
+  const next = () => go(cur + 1), prev = () => go(cur - 1);
+
+  document.getElementById('stage').addEventListener('click', e => {
+    const r = e.currentTarget.getBoundingClientRect();
+    (e.clientX - r.left) < r.width * .3 ? prev() : next();
+  });
+  document.addEventListener('keydown', e => {
+    if (['ArrowRight', 'ArrowDown', ' ', 'PageDown', 'Enter'].includes(e.key)) { e.preventDefault(); next(); }
+    if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); prev(); }
+    if (e.key === 'f' || e.key === 'F') document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
+    if (e.key === 'Home') go(0);
+  });
+  let sx = null;
+  addEventListener('touchstart', e => sx = e.touches[0].clientX, { passive: true });
+  addEventListener('touchend', e => { if (sx === null) return; const dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) > 60) { dx < 0 ? next() : prev(); e.preventDefault && 0; } }, { passive: true });
+
+  // arranque: pantalla negra -> primera diapositiva
+  setTimeout(() => { show(0); hint.classList.add('on'); }, 500);
+})();
+</script>
+</body>
+</html>
