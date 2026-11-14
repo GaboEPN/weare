@@ -259,7 +259,7 @@ $('#dateInput').addEventListener('change', e => { if (e.target.value) { date = e
 /* ---------- Persona nueva / editar ---------- */
 let pickMin = '', pickSex = '', minTouched = false;
 function buildMinPick() {
-  $('#minPick').innerHTML = [...MINS, ''].map(m => `<button type="button" data-v="${m}">${m || 'Ninguno'}</button>`).join('');
+  $('#minPick').innerHTML = MINS.map(m => `<button type="button" data-v="${m}">${m}</button>`).join('');
 }
 function syncPick() {
   const f = $('#personForm');
@@ -363,6 +363,23 @@ async function shareWA(dt = date) {
   toast('Excel descargado · adjúntalo en WhatsApp');
 }
 $('#btnWA').onclick = () => shareWA();
+
+/* ---------- Tema claro / oscuro ---------- */
+const darkMQ = matchMedia('(prefers-color-scheme: dark)');
+const themePref = () => { try { return localStorage.getItem('weare.theme') || 'auto'; } catch (e) { return 'auto'; } };
+function applyTheme() {
+  const p = themePref(), dark = p === 'dark' || (p === 'auto' && darkMQ.matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = dark ? '#0b1220' : '#f4f7fc';
+  $$('#themeSeg button').forEach(b => b.classList.toggle('on', b.dataset.t === p));
+}
+$('#themeSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  try { localStorage.setItem('weare.theme', b.dataset.t); } catch (err) {}
+  buzz(6); applyTheme();
+});
+darkMQ.addEventListener && darkMQ.addEventListener('change', applyTheme);
+applyTheme();
 
 /* ---------- Ajustes / importar ---------- */
 const openMenu = () => { $('#setName').value = S.meeting; openSheet('#sheetMenu'); };

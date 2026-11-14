@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f4f7fc">
+<meta name="color-scheme" content="light dark">
+<script>(function(){try{var p=localStorage.getItem('weare.theme')||'auto',d=p==='dark'||(p==='auto'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';var m=document.querySelector('meta[name=theme-color]');if(m&&d)m.content='#0b1220';}catch(e){}})();</script>
 <title>OneFamily ICT</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -237,6 +239,12 @@
   </div>
   <div class="inset">
     <label class="cell"><span>Reunión</span><input id="setName" placeholder="RAYCES"></label>
+  </div>
+  <p class="cap">Apariencia</p>
+  <div class="seg2" id="themeSeg" style="grid-template-columns:repeat(3,1fr)">
+    <button type="button" data-t="auto">Automático</button>
+    <button type="button" data-t="light">Claro</button>
+    <button type="button" data-t="dark">Oscuro</button>
   </div>
   <p class="cap">Personas</p>
   <div class="inset menu">
