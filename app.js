@@ -279,7 +279,6 @@ function openPerson() {
   }
   syncPick();
   openSheet('#sheetPerson');
-  if (innerWidth >= 700) setTimeout(() => (f.nombres.value ? (f.apellidos.value ? f.edad : f.apellidos) : f.nombres).focus(), 350);
 }
 $('#personForm').addEventListener('submit', e => {
   e.preventDefault();
