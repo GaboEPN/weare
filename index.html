@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a1f44">
+<title>WeAre</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg-orb o1"></div><div class="bg-orb o2"></div>
+
+<main id="app">
+  <header class="top">
+    <div class="brand">
+      <span class="logo"><i data-lucide="sparkles"></i></span>
+      <span class="wordmark">WeAre</span>
+      <button class="icon-btn" id="btnMenu" aria-label="Ajustes"><i data-lucide="settings-2"></i></button>
+    </div>
+
+    <div class="hero">
+      <div class="hero-text">
+        <p class="eyebrow">Reunión</p>
+        <h1 id="meetingName">RAYCES</h1>
+        <label class="datepill">
+          <i data-lucide="calendar"></i>
+          <span id="dateLabel"></span>
+          <input type="date" id="dateInput" aria-label="Fecha de la reunión">
+        </label>
+      </div>
+      <div class="ring" id="ring" aria-live="polite">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b9bff"/><stop offset="1" stop-color="#2f6bff"/></linearGradient>
+          </defs>
+          <circle class="track" cx="50" cy="50" r="42"/>
+          <circle class="prog" id="prog" cx="50" cy="50" r="42" stroke="url(#g)"/>
+        </svg>
+        <div class="ring-num"><b id="cntNum">0</b><small id="cntTot">de 0</small></div>
+      </div>
+    </div>
+
+    <div class="searchbar">
+      <i data-lucide="search"></i>
+      <input id="q" type="search" placeholder="Buscar persona" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <button id="qClear" class="clear" aria-label="Borrar búsqueda" hidden><i data-lucide="x"></i></button>
+    </div>
+    <div class="seg" id="seg">
+      <i class="seg-pill"></i>
+      <button data-f="all" class="on">Todos</button>
+      <button data-f="in">Presentes</button>
+      <button data-f="out">Faltan</button>
+    </div>
+  </header>
+
+  <section id="list" class="list"></section>
+  <div class="spacer"></div>
+</main>
+
+<nav class="dock">
+  <button class="pill ghost" id="btnNew"><i data-lucide="user-plus"></i><span>Nuevo</span></button>
+  <button class="pill solid" id="btnFinish"><i data-lucide="check-check"></i><span>Finalizar</span></button>
+</nav>
+
+<div class="scrim" id="scrim"></div>
+
+<section class="sheet" id="sheetPerson" aria-hidden="true">
+  <div class="grab"></div>
+  <h2 id="personTitle">Persona nueva</h2>
+  <p class="sub" id="personSub">Se registrará y quedará marcada como presente.</p>
+  <form id="personForm" autocomplete="off">
+    <label class="field"><span>Nombres</span><input name="nombres" required autocapitalize="words" placeholder="María Fernanda"></label>
+    <label class="field"><span>Apellidos</span><input name="apellidos" required autocapitalize="words" placeholder="Gómez Pérez"></label>
+    <label class="field"><span>Celular</span><input name="celular" required type="tel" inputmode="tel" placeholder="099 123 4567"></label>
+    <div class="row-actions">
+      <button type="button" class="pill danger" id="btnDelPerson" hidden aria-label="Eliminar"><i data-lucide="trash-2"></i></button>
+      <button type="submit" class="pill solid grow"><i data-lucide="check"></i><span id="personBtn">Registrar y marcar</span></button>
+    </div>
+  </form>
+</section>
+
+<section class="sheet" id="sheetFinish" aria-hidden="true">
+  <div class="grab"></div>
+  <h2>Reunión lista</h2>
+  <p class="sub" id="finSub"></p>
+  <div class="stats">
+    <div><b id="stIn">0</b><span>Asistentes</span></div>
+    <div><b id="stNew">0</b><span>Nuevos</span></div>
+    <div><b id="stOut">0</b><span>Faltaron</span></div>
+  </div>
+  <div class="stack">
+    <button class="pill solid wide" id="btnWA"><i data-lucide="send"></i><span>Enviar por WhatsApp</span></button>
+    <button class="pill ghost wide" id="btnCSV"><i data-lucide="download"></i><span>Descargar archivo (Excel)</span></button>
+    <button class="pill ghost wide" id="btnCopy"><i data-lucide="copy"></i><span>Copiar resumen</span></button>
+  </div>
+</section>
+
+<section class="sheet" id="sheetMenu" aria-hidden="true">
+  <div class="grab"></div>
+  <h2>Ajustes</h2>
+  <label class="field"><span>Nombre de la reunión</span><input id="setName" placeholder="RAYCES"></label>
+  <div class="stack">
+    <button class="pill ghost wide" id="btnImport"><i data-lucide="list-plus"></i><span>Agregar lista de personas</span></button>
+    <button class="pill ghost wide" id="btnFile"><i data-lucide="file-up"></i><span>Importar archivo CSV</span></button>
+    <button class="pill ghost wide" id="btnBackup"><i data-lucide="database-backup"></i><span>Guardar copia de seguridad</span></button>
+    <button class="pill ghost wide" id="btnRestore"><i data-lucide="history"></i><span>Restaurar copia</span></button>
+    <button class="pill danger wide" id="btnClearDay"><i data-lucide="eraser"></i><span>Limpiar asistencia de este día</span></button>
+  </div>
+  <input type="file" id="fileCSV" accept=".csv,text/csv,text/plain" hidden>
+  <input type="file" id="fileJSON" accept=".json,application/json" hidden>
+  <p class="foot">Los datos se guardan en este navegador. Haz una copia de seguridad de vez en cuando.</p>
+</section>
+
+<section class="sheet" id="sheetImport" aria-hidden="true">
+  <div class="grab"></div>
+  <h2>Agregar lista</h2>
+  <p class="sub">Una persona por línea: <b>Nombres Apellidos, celular</b> (el celular es opcional).</p>
+  <textarea id="importText" rows="8" placeholder="María Gómez, 0991234567&#10;Juan Pérez"></textarea>
+  <div class="row-actions"><button class="pill solid grow" id="btnImportGo"><i data-lucide="check"></i><span>Agregar</span></button></div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script src="vendor/lucide.min.js"></script>
+<script src="vendor/confetti.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
