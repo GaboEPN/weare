@@ -16,6 +16,7 @@ const pad = n => String(n).padStart(2, '0');
 const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
 let date = todayStr(), filter = 'all', minFilter = 'all', query = '';
 let editingId = null, lastCount = 0;
+let view = 'home';
 
 const norm = s => (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 const full = m => `${m.nombres} ${m.apellidos}`.trim();
@@ -164,6 +165,7 @@ function renderList() {
     el.innerHTML = html + '</div></div>';
   }
   icons(); renderCount();
+  if (view !== 'meeting') renderPages();
 }
 
 function toggle(id, row) {
@@ -303,14 +305,15 @@ $('#btnDelPerson').onclick = () => {
 };
 
 /* ---------- Exportar ---------- */
-function reportRows() {
-  const [y, m, d] = date.split('-');
-  const rows = S.members.map(p => ({ p, in: isIn(p.id), nuevo: p.nuevo === date }));
+function reportRows(dt = date) {
+  const [y, m, d] = dt.split('-');
+  const a = S.att[dt] || {};
+  const rows = S.members.map(p => ({ p, in: !!a[p.id], nuevo: p.nuevo === dt }));
   rows.sort((a, b) => (b.in - a.in) || norm(full(a.p)).localeCompare(norm(full(b.p)), 'es'));
   return { rows, fecha: `${d}/${m}/${y}` };
 }
-function xlsxBlob() {
-  const { rows, fecha } = reportRows();
+function xlsxBlob(dt = date) {
+  const { rows, fecha } = reportRows(dt);
   const A = [['Fecha', 'Reunión', 'Nombres', 'Apellidos', 'Edad', 'Ministerio', 'Celular', 'Asistió', 'Nuevo']];
   rows.forEach(r => A.push([fecha, S.meeting, r.p.nombres, r.p.apellidos, r.p.edad ?? '', r.p.ministerio || '', r.p.celular || '', r.in ? 'Sí' : 'No', r.nuevo ? 'Sí' : 'No']));
   const ws = XLSX.utils.aoa_to_sheet(A);
@@ -322,9 +325,9 @@ function xlsxBlob() {
   XLSX.utils.book_append_sheet(wb, wn, 'Nuevos');
   return new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
-const fileName = () => `asistencia-${norm(S.meeting).replace(/\W+/g, '-')}-${date}.xlsx`;
-function summaryText() {
-  const { rows, fecha } = reportRows();
+const fileName = (dt = date) => `asistencia-${norm(S.meeting).replace(/\W+/g, '-')}-${dt}.xlsx`;
+function summaryText(dt = date) {
+  const { rows, fecha } = reportRows(dt);
   const ins = rows.filter(r => r.in), news = ins.filter(r => r.nuevo);
   let t = `*${S.meeting}* · ${fecha}\n✅ ${ins.length} asistentes de ${rows.length}\n`;
   const by = MINS.map(k => [k, ins.filter(r => r.p.ministerio === k).length]).filter(x => x[1]);
@@ -348,16 +351,17 @@ function openFinish() {
 }
 $('#btnXLS').onclick = () => { download(fileName(), xlsxBlob()); toast('Excel descargado'); };
 $('#btnCopy').onclick = async () => { try { await navigator.clipboard.writeText(summaryText()); toast('Resumen copiado'); } catch (e) { toast('No se pudo copiar'); } };
-$('#btnWA').onclick = async () => {
-  const text = summaryText(), blob = xlsxBlob();
-  const file = new File([blob], fileName(), { type: blob.type });
+async function shareWA(dt = date) {
+  const text = summaryText(dt), blob = xlsxBlob(dt);
+  const file = new File([blob], fileName(dt), { type: blob.type });
   try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text }); return; }
   } catch (e) { if (e.name === 'AbortError') return; }
-  download(fileName(), blob);
+  download(fileName(dt), blob);
   window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
   toast('Excel descargado · adjúntalo en WhatsApp');
-};
+}
+$('#btnWA').onclick = () => shareWA();
 
 /* ---------- Ajustes / importar ---------- */
 const openMenu = () => { $('#setName').value = S.meeting; openSheet('#sheetMenu'); };
@@ -456,6 +460,144 @@ $('#btnClearDay').onclick = () => {
   delete S.att[date]; save(); closeSheets(); renderList(); toast('Asistencia limpiada');
 };
 
+/* ---------- Navegación: inicio · reuniones · asistentes ---------- */
+const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+const fmtD = (d, o) => { const [y, m, dd] = d.split('-').map(Number); return new Date(y, m - 1, dd).toLocaleDateString('es', o).replace(/\./g, ''); };
+const byName = (a, b) => norm(full(a)).localeCompare(norm(full(b)), 'es');
+const meetingDates = () => Object.keys(S.att).filter(d => Object.keys(S.att[d] || {}).length).sort().reverse();
+function mstats(d) {
+  const a = S.att[d] || {};
+  return { n: S.members.filter(m => a[m.id]).length, nuevos: S.members.filter(m => m.nuevo === d && a[m.id]).length, total: S.members.length };
+}
+const longD = d => cap(fmtD(d, { weekday: 'long', day: 'numeric', month: 'long' }));
+
+function setView(v, push = true) {
+  view = v; document.body.dataset.view = v; closeSheets();
+  if (push) history.pushState({ v }, '', '#' + v);
+  if (v !== 'meeting') renderPages();
+  window.scrollTo(0, 0);
+  $$('.page').forEach(p => p.scrollTop = 0);
+}
+addEventListener('popstate', e => setView((e.state && e.state.v) || 'home', false));
+
+function startMeeting(d) {
+  date = d; filter = 'all'; minFilter = 'all'; query = '';
+  $('#q').value = ''; $('#qClear').hidden = true;
+  $$('#seg button').forEach(x => x.classList.toggle('on', x.dataset.f === 'all'));
+  $('.seg-pill').style.transform = 'translateX(0)';
+  renderHead(); setView('meeting'); renderList();
+}
+
+function meetRow(d, i = 0) {
+  const s = mstats(d), pct = s.total ? Math.round(s.n / s.total * 100) : 0;
+  return `<button class="mrow" data-meet="${d}" style="animation-delay:${Math.min(i, 10) * 30}ms">
+    <span class="dt"><b>${+d.slice(8)}</b><small>${esc(fmtD(d, { month: 'short' }))}</small></span>
+    <span class="mw"><b>${esc(longD(d))}</b><span>${s.n} asistentes${s.nuevos ? ` · ${s.nuevos} nuevos` : ''}</span></span>
+    <span class="pc">${pct}%</span><i data-lucide="chevron-right" class="chev"></i></button>`;
+}
+
+function renderHome() {
+  const t = todayStr(), md = meetingDates();
+  $('#homeMeeting').textContent = S.meeting || 'Reunión';
+  $('#homeSub').textContent = `${longD(t)} · ${S.members.length} personas · ${md.length} ${md.length === 1 ? 'reunión' : 'reuniones'}`;
+  const ts = mstats(t);
+  $('#newSub').textContent = ts.n ? `Continuar la de hoy · ${ts.n} presentes` : 'Registrar la asistencia de hoy';
+  $('#meetSub').textContent = md.length ? `${md.length} registradas · la última, ${fmtD(md[0], { day: 'numeric', month: 'short' })}` : 'Aún no hay reuniones guardadas';
+  $('#pplSub').textContent = S.members.length ? `${S.members.length} personas y su historial` : 'Importa tu lista para empezar';
+  const rec = md.slice(0, 4);
+  $('#recentT').hidden = !rec.length;
+  $('#recent').innerHTML = rec.map(meetRow).join('');
+}
+function renderMeetings() {
+  const q = norm($('#qMeet').value), md = meetingDates();
+  const ds = md.filter(d => !q || norm(`${fmtD(d, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} ${d} ${fmtD(d, { day: '2-digit', month: '2-digit', year: 'numeric' })}`).includes(q));
+  $('#meetCount').textContent = md.length ? `${md.length} ${md.length === 1 ? 'reunión registrada' : 'reuniones registradas'}` : 'Todavía no hay reuniones registradas';
+  let html = '', mon = '', i = 0;
+  ds.forEach(d => {
+    if (d.slice(0, 7) !== mon) { mon = d.slice(0, 7); html += `<div class="mon">${esc(fmtD(d, { month: 'long', year: 'numeric' }))}</div>`; }
+    html += meetRow(d, i++);
+  });
+  $('#meetList').innerHTML = html || `<div class="empty"><div class="big"><i data-lucide="calendar-x"></i></div><h3>${md.length ? 'Sin resultados' : 'Aún no hay reuniones'}</h3><p>${md.length ? 'Prueba con otra fecha o mes.' : 'Cuando registres asistencia en una reunión, aparecerá aquí.'}</p></div>`;
+}
+function renderPeople() {
+  const q = norm($('#qPeople').value), md = meetingDates();
+  const items = S.members.filter(m => !q || norm(full(m)).includes(q) || norm(m.celular).includes(q) || norm(m.ministerio).includes(q)).sort(byName);
+  $('#peopleCount').textContent = `${S.members.length} personas registradas`;
+  $('#peopleList').innerHTML = items.map((m, i) => {
+    const mine = md.filter(d => S.att[d][m.id]);
+    const pill = m.ministerio ? `<i class="mp" style="--mh:${MHUE[m.ministerio]}">${esc(m.ministerio)}</i>` : '';
+    return `<button class="mrow prow" data-person="${m.id}" style="animation-delay:${Math.min(i, 10) * 25}ms">
+      <span class="av" style="--h:${hue(full(m))}">${esc(initials(m))}</span>
+      <span class="mw"><b>${esc(full(m))}</b><span class="sub2">${pill}<span>${mine.length} de ${md.length} reuniones</span></span></span>
+      <span class="pc">${mine.length ? esc(fmtD(mine[0], { day: 'numeric', month: 'short' })) : '—'}</span><i data-lucide="chevron-right" class="chev"></i></button>`;
+  }).join('') || `<div class="empty"><div class="big"><i data-lucide="search-x"></i></div><h3>${S.members.length ? 'Sin resultados' : 'Aún no hay personas'}</h3><p>${S.members.length ? 'Prueba con otro nombre o número.' : 'Importa tu lista desde Ajustes o registra una nueva reunión.'}</p></div>`;
+}
+function renderPages() {
+  if (view === 'home') renderHome();
+  else if (view === 'meetings') renderMeetings();
+  else if (view === 'people') renderPeople();
+  icons();
+}
+$('#qMeet').addEventListener('input', () => { renderMeetings(); icons(); });
+$('#qPeople').addEventListener('input', () => { renderPeople(); icons(); });
+
+function showMeeting(d) {
+  const s = mstats(d), a = S.att[d] || {};
+  const ppl = S.members.filter(m => a[m.id]).sort(byName);
+  const by = MINS.map(k => [k, ppl.filter(m => m.ministerio === k).length]).filter(x => x[1]);
+  $('#meetBody').innerHTML = `
+    <h3 class="mt-h">${esc(longD(d))}</h3>
+    <p class="mt-sub">${esc(S.meeting)} · ${esc(fmtD(d, { year: 'numeric' }))}</p>
+    <div class="stats"><div><b>${s.n}</b><span>Asistentes</span></div><div><b>${s.nuevos}</b><span>Nuevos</span></div><div><b>${s.total - s.n}</b><span>Faltaron</span></div></div>
+    ${by.length ? `<div class="minline">${by.map(([k, c]) => `<i class="mp" style="--mh:${MHUE[k]}">${k} · ${c}</i>`).join('')}</div>` : ''}
+    <p class="cap">Asistentes</p>
+    <div class="inset alist">${ppl.map(m => `<div class="ar"><span class="av" style="--h:${hue(full(m))}">${esc(initials(m))}</span><b>${esc(full(m))}</b>${m.ministerio ? `<i class="mp" style="--mh:${MHUE[m.ministerio]}">${esc(m.ministerio)}</i>` : ''}</div>`).join('') || '<p class="muted p">Nadie quedó marcado en esta reunión.</p>'}</div>
+    <div class="stack top">
+      <button class="pill solid wide" data-open="${d}"><i data-lucide="pencil"></i><span>Abrir y editar</span></button>
+      <button class="pill ghost wide" data-wa="${d}"><i data-lucide="send"></i><span>Enviar por WhatsApp</span></button>
+      <button class="pill ghost wide" data-xls="${d}"><i data-lucide="file-spreadsheet"></i><span>Descargar Excel</span></button>
+    </div>`;
+  icons(); openSheet('#sheetMeet');
+}
+function showPerson(id) {
+  const m = S.members.find(x => x.id === id); if (!m) return;
+  const md = meetingDates(), mine = md.filter(d => S.att[d][id]);
+  const pct = md.length ? Math.round(mine.length / md.length * 100) : 0;
+  const row = (l, v) => `<div class="cell"><span>${l}</span><i class="val">${v}</i></div>`;
+  $('#pinfoBody').innerHTML = `
+    <div class="pi-top"><span class="av" style="--h:${hue(full(m))}">${esc(initials(m))}</span><h3>${esc(full(m))}</h3>${m.ministerio ? `<i class="mp" style="--mh:${MHUE[m.ministerio]}">${esc(m.ministerio)}</i>` : ''}</div>
+    <div class="stats"><div><b>${mine.length}</b><span>Asistencias</span></div><div><b>${md.length}</b><span>Reuniones</span></div><div><b>${pct}%</b><span>Constancia</span></div></div>
+    <div class="inset">${row('Edad', m.edad !== '' && m.edad != null ? esc(m.edad) + ' años' : '—')}${row('Celular', m.celular ? esc(m.celular) : '—')}${row('Registrada', m.nuevo ? esc(fmtD(m.nuevo, { day: 'numeric', month: 'short', year: 'numeric' })) : 'Lista inicial')}</div>
+    <p class="cap">Historial</p>
+    <div class="inset hlist">${md.map(d => `<div class="hrow"><span>${esc(longD(d))}</span><i class="hs ${S.att[d][id] ? 'ok' : ''}">${S.att[d][id] ? 'Asistió' : 'No asistió'}</i></div>`).join('') || '<p class="muted p">Aún no hay reuniones registradas.</p>'}</div>
+    <div class="stack top">
+      ${m.celular ? `<a class="pill ghost wide" href="tel:${esc(m.celular)}"><i data-lucide="phone"></i><span>Llamar</span></a>` : ''}
+      <button class="pill solid wide" data-edit="${id}"><i data-lucide="pencil"></i><span>Editar datos</span></button>
+    </div>`;
+  icons(); openSheet('#sheetPInfo');
+}
+
+document.addEventListener('click', e => {
+  const t = e.target;
+  let el;
+  if ((el = t.closest('[data-go]'))) {
+    const g = el.dataset.go;
+    if (g === 'meeting-new') startMeeting(todayStr());
+    else if (g !== view) setView(g);
+    else closeSheets();
+    return;
+  }
+  if (t.closest('[data-menu]')) return openMenu();
+  if ((el = t.closest('[data-meet]'))) return showMeeting(el.dataset.meet);
+  if ((el = t.closest('[data-person]'))) return showPerson(el.dataset.person);
+  if ((el = t.closest('[data-open]'))) return startMeeting(el.dataset.open);
+  if ((el = t.closest('[data-wa]'))) return shareWA(el.dataset.wa);
+  if ((el = t.closest('[data-xls]'))) { download(fileName(el.dataset.xls), xlsxBlob(el.dataset.xls)); return toast('Excel descargado'); }
+  if ((el = t.closest('[data-edit]'))) return openPerson(el.dataset.edit);
+});
+$('#btnHomeFin').onclick = () => setView('home');
+
 $('#q').placeholder = matchMedia('(min-width:1024px)').matches ? 'Buscar persona   ( / )' : 'Buscar persona';
-renderHead(); renderList(); icons();
+history.replaceState({ v: 'home' }, '', '#home');
+renderHead(); renderList(); renderPages(); icons();
 })();

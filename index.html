@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-view="home">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7fb0ff"/><stop offset="1" stop-color="#4f86f7"/></linearGradient></defs></svg>
 <div class="bg-orb o1"></div><div class="bg-orb o2"></div>
 
@@ -19,8 +19,9 @@
   <!-- Barra lateral (escritorio) / cabecera (móvil) -->
   <aside class="side">
     <div class="brand">
-      <img class="logo" src="icon.svg" alt="">
-      <span class="wordmark">OneFamily <em>ICT</em></span>
+      <img class="logo" src="icon.svg" alt="" data-go="home">
+      <span class="wordmark" data-go="home">OneFamily <em>ICT</em></span>
+      <button class="icon-btn" data-go="home" aria-label="Ir al inicio"><i data-lucide="house"></i></button>
       <button class="icon-btn" id="btnMenu" aria-label="Ajustes"><i data-lucide="settings-2"></i></button>
     </div>
 
@@ -47,6 +48,7 @@
     <nav class="navlist" id="mins"></nav>
 
     <div class="side-foot">
+      <button class="navbtn" data-go="home"><i data-lucide="house"></i><span>Inicio</span></button>
       <button class="navbtn" id="btnMenu2"><i data-lucide="settings-2"></i><span>Ajustes</span></button>
     </div>
   </aside>
@@ -93,6 +95,69 @@
     <div class="spacer"></div>
   </section>
 </main>
+
+<!-- ================= INICIO ================= -->
+<section class="page" id="viewHome">
+  <div class="page-in">
+    <div class="brand">
+      <img class="logo" src="icon.svg" alt="">
+      <span class="wordmark">OneFamily <em>ICT</em></span>
+      <button class="icon-btn" data-menu aria-label="Ajustes"><i data-lucide="settings-2"></i></button>
+    </div>
+    <p class="eyebrow home-eye" id="homeMeeting">RAYCES</p>
+    <h1 class="home-h">¿Qué quieres hacer?</h1>
+    <p class="home-sub" id="homeSub"></p>
+
+    <div class="modules">
+      <button class="mod mod-new" data-go="meeting-new">
+        <span class="mi"><i data-lucide="calendar-plus"></i></span>
+        <span class="mt"><b>Nueva reunión</b><small id="newSub">Registrar la asistencia de hoy</small></span>
+        <i data-lucide="chevron-right" class="chev"></i>
+      </button>
+      <button class="mod mod-meet" data-go="meetings">
+        <span class="mi"><i data-lucide="calendar-search"></i></span>
+        <span class="mt"><b>Buscar reuniones</b><small id="meetSub"></small></span>
+        <i data-lucide="chevron-right" class="chev"></i>
+      </button>
+      <button class="mod mod-ppl" data-go="people">
+        <span class="mi"><i data-lucide="user-search"></i></span>
+        <span class="mt"><b>Buscar asistentes</b><small id="pplSub"></small></span>
+        <i data-lucide="chevron-right" class="chev"></i>
+      </button>
+    </div>
+
+    <h3 class="sec-t" id="recentT">Reuniones recientes</h3>
+    <div class="mlist" id="recent"></div>
+  </div>
+</section>
+
+<!-- ================= BUSCAR REUNIONES ================= -->
+<section class="page" id="viewMeetings">
+  <div class="page-in">
+    <div class="pg-bar"><button class="back" data-go="home"><i data-lucide="chevron-left"></i><span>Inicio</span></button><button class="icon-btn" data-menu aria-label="Ajustes"><i data-lucide="settings-2"></i></button></div>
+    <h1 class="pg-h">Reuniones</h1>
+    <p class="home-sub" id="meetCount"></p>
+    <div class="searchbar pg-search">
+      <i data-lucide="search"></i>
+      <input id="qMeet" type="search" placeholder="Buscar por fecha: sábado, noviembre, 14…" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="mlist" id="meetList"></div>
+  </div>
+</section>
+
+<!-- ================= BUSCAR ASISTENTES ================= -->
+<section class="page" id="viewPeople">
+  <div class="page-in">
+    <div class="pg-bar"><button class="back" data-go="home"><i data-lucide="chevron-left"></i><span>Inicio</span></button><button class="icon-btn" data-menu aria-label="Ajustes"><i data-lucide="settings-2"></i></button></div>
+    <h1 class="pg-h">Asistentes</h1>
+    <p class="home-sub" id="peopleCount"></p>
+    <div class="searchbar pg-search">
+      <i data-lucide="search"></i>
+      <input id="qPeople" type="search" placeholder="Buscar por nombre, celular o ministerio" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="mlist" id="peopleList"></div>
+  </div>
+</section>
 
 <nav class="dock">
   <button class="pill ghost" data-act="new"><i data-lucide="user-plus"></i><span>Nuevo</span></button>
@@ -147,7 +212,28 @@
     <button class="pill solid wide" id="btnWA"><i data-lucide="send"></i><span>Enviar por WhatsApp</span></button>
     <button class="pill ghost wide" id="btnXLS"><i data-lucide="file-spreadsheet"></i><span>Descargar Excel</span></button>
     <button class="pill ghost wide" id="btnCopy"><i data-lucide="copy"></i><span>Copiar resumen</span></button>
+    <button class="pill plain wide" id="btnHomeFin"><i data-lucide="house"></i><span>Ir al inicio</span></button>
   </div>
+</section>
+
+<!-- Detalle de reunión -->
+<section class="sheet grouped" id="sheetMeet" aria-hidden="true">
+  <div class="bar">
+    <button type="button" class="link" data-close>Cerrar</button>
+    <h2>Reunión</h2>
+    <span class="bar-sp"></span>
+  </div>
+  <div id="meetBody"></div>
+</section>
+
+<!-- Detalle de persona -->
+<section class="sheet grouped" id="sheetPInfo" aria-hidden="true">
+  <div class="bar">
+    <button type="button" class="link" data-close>Cerrar</button>
+    <h2>Persona</h2>
+    <span class="bar-sp"></span>
+  </div>
+  <div id="pinfoBody"></div>
 </section>
 
 <!-- Ajustes -->
