@@ -85,43 +85,53 @@ function renderHead() {
   const dl = new Date(y, m - 1, d).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'short' }).replace('.', '');
   $('#dateLabel').textContent = dl.charAt(0).toUpperCase() + dl.slice(1);
   $('#dateInput').value = date;
+  $('#subtitle').textContent = `${dl.charAt(0).toUpperCase() + dl.slice(1)} · ${S.meeting || 'Reunión'}`;
 }
 function renderMins() {
-  const box = $('#mins'), sl = box.scrollLeft;
   const cnt = k => {
     const arr = S.members.filter(m => k === 'all' ? true : k === '_none' ? !m.ministerio : m.ministerio === k);
     return [arr.filter(m => isIn(m.id)).length, arr.length];
   };
   const keys = ['all', ...MINS];
   if (S.members.some(m => !m.ministerio)) keys.push('_none');
-  box.innerHTML = keys.map(k => {
+  const html = keys.map(k => {
     const [p, t] = cnt(k);
     const label = k === 'all' ? 'Todos' : k === '_none' ? 'Sin ministerio' : k;
-    return `<button data-m="${k}" class="${minFilter === k ? 'on' : ''}">${label}<em>${p}/${t}</em></button>`;
+    const dot = k === 'all' || k === '_none' ? '<i class="dot" style="--mh:215"></i>' : `<i class="dot" style="--mh:${MHUE[k]}"></i>`;
+    return `<button data-m="${k}" class="${minFilter === k ? 'on' : ''}">${dot}<span class="lb">${label}</span><em>${p}/${t}</em></button>`;
   }).join('');
-  box.scrollLeft = sl;
+  ['#mins', '#minsM'].forEach(sel => { const box = $(sel), sl = box.scrollLeft; box.innerHTML = html; box.scrollLeft = sl; });
 }
 function renderCount() {
   const total = S.members.length;
   const n = S.members.filter(m => isIn(m.id)).length;
-  $('#cntNum').textContent = n;
-  $('#cntTot').textContent = `de ${total}`;
-  $('#prog').style.strokeDashoffset = C * (1 - (total ? n / total : 0));
-  if (n !== lastCount) { const b = $('#cntNum'); b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); lastCount = n; }
+  const frac = total ? n / total : 0;
+  const nuevos = S.members.filter(m => m.nuevo === date && isIn(m.id)).length;
+  $('#cntNum').textContent = n; $('#cntNum2').textContent = n;
+  $('#cntTot').textContent = `de ${total}`; $('#cntTot2').textContent = `de ${total} personas`;
+  $('#prog').style.strokeDashoffset = C * (1 - frac); $('#prog2').style.strokeDashoffset = C * (1 - frac);
+  $('#stOut2').textContent = total - n; $('#stNew2').textContent = nuevos; $('#stPct2').textContent = Math.round(frac * 100) + '%';
+  if (n !== lastCount) { ['#cntNum', '#cntNum2'].forEach(s => { const b = $(s); b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); }); lastCount = n; }
   renderMins();
 }
 
 /* ---------- Lista ---------- */
-function hue(s) { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 360; return 205 + (h % 50); }
+function hue(s) { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 360; return 190 + (h % 110); }
 function initials(m) { return ((m.nombres[0] || '') + (m.apellidos[0] || '')).toUpperCase(); }
 
 function rowHTML(m, i) {
   const h = hue(full(m));
+  const pill = m.ministerio ? `<i class="mp" style="--mh:${MHUE[m.ministerio]}">${esc(m.ministerio)}</i>` : '';
+  const isNew = m.nuevo === date;
   return `<button class="person ${isIn(m.id) ? 'in' : ''}" data-id="${m.id}" style="animation-delay:${Math.min(i, 14) * 28}ms">
-    <span class="av" style="--h1:hsl(${h} 70% 52%);--h2:hsl(${h + 12} 75% 28%)">${esc(initials(m))}</span>
+    <span class="av" style="--h:${h}">${esc(initials(m))}</span>
     <span class="who"><b>${esc(m.nombres)}</b>
-      <span class="sub2"><span>${esc(m.apellidos)}</span>${m.ministerio ? `<i class="mp" style="--mh:${MHUE[m.ministerio]}">${esc(m.ministerio)}</i>` : ''}</span></span>
-    ${m.nuevo === date ? '<span class="badge">Nuevo</span>' : ''}
+      <span class="sub2"><span>${esc(m.apellidos)}</span>${pill}</span></span>
+    <span class="c-min">${pill || '<span style="color:#b3bdd2">—</span>'}</span>
+    <span class="c-age">${m.edad !== '' && m.edad != null ? esc(m.edad) : '—'}</span>
+    <span class="c-tel">${m.celular ? esc(m.celular) : '—'}</span>
+    <span class="c-st"><i class="st"></i>${isNew ? '<i class="nw">Nuevo</i>' : ''}</span>
+    ${isNew ? '<span class="badge">Nuevo</span>' : ''}
     <span class="chk"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
   </button>`;
 }
@@ -145,13 +155,13 @@ function renderList() {
   } else if (!items.length) {
     el.innerHTML = add + `<div class="empty"><div class="big"><i data-lucide="search-x"></i></div><h3>Sin resultados</h3><p>Prueba con otro nombre, otro filtro o agrégala como nueva.</p></div>`;
   } else {
-    let html = add, cur = '', open = false, i = 0;
+    let html = `<div class="tbl"><div class="tbl-head"><span></span><span>Nombre</span><span>Ministerio</span><span>Edad</span><span>Celular</span><span>Estado</span><span></span></div>${add}`, cur = '', open = false, i = 0;
     for (const m of items) {
       const L = (norm(m.nombres)[0] || '#').toUpperCase();
       if (L !== cur) { if (open) html += '</div>'; html += `<div class="letter">${L}</div><div class="group">`; cur = L; open = true; }
       html += rowHTML(m, i++);
     }
-    el.innerHTML = html + '</div>';
+    el.innerHTML = html + '</div></div>';
   }
   icons(); renderCount();
 }
@@ -204,10 +214,14 @@ $('#seg').addEventListener('click', e => {
   $('.seg-pill').style.transform = `translateX(${['all', 'in', 'out'].indexOf(filter) * 100}%)`;
   renderList();
 });
-$('#mins').addEventListener('click', e => {
+['#mins', '#minsM'].forEach(sel => $(sel).addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   minFilter = b.dataset.m; renderList();
-  const on = $('#mins .on'); if (on && on.scrollIntoView) on.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  const on = $('#minsM .on'); if (on && innerWidth < 1024 && on.scrollIntoView) on.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+}));
+// atajo: "/" enfoca la búsqueda
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); $('#q').focus(); }
 });
 $('#dateInput').addEventListener('change', e => { if (e.target.value) { date = e.target.value; renderHead(); renderList(); } });
 
@@ -346,7 +360,8 @@ $('#btnWA').onclick = async () => {
 };
 
 /* ---------- Ajustes / importar ---------- */
-$('#btnMenu').onclick = () => { $('#setName').value = S.meeting; openSheet('#sheetMenu'); };
+const openMenu = () => { $('#setName').value = S.meeting; openSheet('#sheetMenu'); };
+$('#btnMenu').onclick = openMenu; $('#btnMenu2').onclick = openMenu;
 $('#setName').addEventListener('input', e => { S.meeting = e.target.value.trim() || 'RAYCES'; save(); renderHead(); });
 $('#btnImport').onclick = () => openSheet('#sheetImport');
 
@@ -441,5 +456,6 @@ $('#btnClearDay').onclick = () => {
   delete S.att[date]; save(); closeSheets(); renderList(); toast('Asistencia limpiada');
 };
 
+$('#q').placeholder = matchMedia('(min-width:1024px)').matches ? 'Buscar persona   ( / )' : 'Buscar persona';
 renderHead(); renderList(); icons();
 })();

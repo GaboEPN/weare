@@ -12,59 +12,83 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7fb0ff"/><stop offset="1" stop-color="#4f86f7"/></linearGradient></defs></svg>
 <div class="bg-orb o1"></div><div class="bg-orb o2"></div>
 
 <main id="app" class="shell">
+  <!-- Barra lateral (escritorio) / cabecera (móvil) -->
   <aside class="side">
-    <header class="head">
-      <div class="brand">
-        <img class="logo" src="icon.svg" alt="">
-        <span class="wordmark">OneFamily <em>ICT</em></span>
-        <button class="icon-btn" id="btnMenu" aria-label="Ajustes"><i data-lucide="settings-2"></i></button>
-      </div>
-      <div class="hero">
-        <div class="hero-text">
-          <p class="eyebrow">Reunión</p>
-          <h1 id="meetingName">RAYCES</h1>
-          <label class="datepill">
-            <i data-lucide="calendar"></i>
-            <span id="dateLabel"></span>
-            <input type="date" id="dateInput" aria-label="Fecha de la reunión">
-          </label>
-        </div>
-        <div class="ring" aria-live="polite">
-          <svg viewBox="0 0 100 100">
-            <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b9bff"/><stop offset="1" stop-color="#2f6bff"/></linearGradient></defs>
-            <circle class="track" cx="50" cy="50" r="42"/>
-            <circle class="prog" id="prog" cx="50" cy="50" r="42" stroke="url(#g)"/>
-          </svg>
-          <div class="ring-num"><b id="cntNum">0</b><small id="cntTot">de 0</small></div>
-        </div>
-      </div>
-    </header>
+    <div class="brand">
+      <img class="logo" src="icon.svg" alt="">
+      <span class="wordmark">OneFamily <em>ICT</em></span>
+      <button class="icon-btn" id="btnMenu" aria-label="Ajustes"><i data-lucide="settings-2"></i></button>
+    </div>
 
-    <div class="controls">
-      <div class="searchbar">
-        <i data-lucide="search"></i>
-        <input id="q" type="search" placeholder="Buscar persona" autocomplete="off" autocapitalize="off" spellcheck="false">
-        <button id="qClear" class="clear" aria-label="Borrar búsqueda" hidden><i data-lucide="x"></i></button>
+    <div class="hero">
+      <div class="hero-text">
+        <p class="eyebrow">Reunión</p>
+        <h1 id="meetingName">RAYCES</h1>
+        <label class="datepill">
+          <i data-lucide="calendar"></i>
+          <span id="dateLabel"></span>
+          <input type="date" id="dateInput" aria-label="Fecha de la reunión">
+        </label>
       </div>
-      <div class="seg" id="seg">
-        <i class="seg-pill"></i>
-        <button data-f="all" class="on">Todos</button>
-        <button data-f="in">Presentes</button>
-        <button data-f="out">Faltan</button>
+      <div class="ring" aria-live="polite">
+        <svg viewBox="0 0 100 100">
+          <circle class="track" cx="50" cy="50" r="42"/>
+          <circle class="prog" id="prog" cx="50" cy="50" r="42" stroke="url(#g)"/>
+        </svg>
+        <div class="ring-num"><b id="cntNum">0</b><small id="cntTot">de 0</small></div>
       </div>
-      <p class="cap side-cap">Ministerio</p>
-      <div class="mins" id="mins"></div>
-      <div class="side-actions">
-        <button class="pill ghost" data-act="new"><i data-lucide="user-plus"></i><span>Nueva persona</span></button>
-        <button class="pill solid" data-act="finish"><i data-lucide="check-check"></i><span>Finalizar</span></button>
-      </div>
+    </div>
+
+    <p class="side-cap">Ministerios</p>
+    <nav class="navlist" id="mins"></nav>
+
+    <div class="side-foot">
+      <button class="navbtn" id="btnMenu2"><i data-lucide="settings-2"></i><span>Ajustes</span></button>
     </div>
   </aside>
 
   <section class="content">
+    <div class="toolbar">
+      <div class="tb-title">
+        <h2>Asistencia</h2>
+        <p id="subtitle"></p>
+      </div>
+      <div class="tb-ctl">
+        <div class="searchbar">
+          <i data-lucide="search"></i>
+          <input id="q" type="search" placeholder="Buscar persona   ( / )" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <button id="qClear" class="clear" aria-label="Borrar búsqueda" hidden><i data-lucide="x"></i></button>
+        </div>
+        <div class="seg" id="seg">
+          <i class="seg-pill"></i>
+          <button data-f="all" class="on">Todos</button>
+          <button data-f="in">Presentes</button>
+          <button data-f="out">Faltan</button>
+        </div>
+        <div class="side-actions">
+          <button class="pill ghost" data-act="new"><i data-lucide="user-plus"></i><span>Nueva persona</span></button>
+          <button class="pill solid" data-act="finish"><i data-lucide="check-check"></i><span>Finalizar</span></button>
+        </div>
+      </div>
+      <div class="chips-m" id="minsM"></div>
+    </div>
+
+    <div class="stats-row">
+      <div class="sc sc-ring">
+        <div class="rs">
+          <svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="42"/><circle class="prog" id="prog2" cx="50" cy="50" r="42" stroke="url(#g)"/></svg>
+        </div>
+        <div><span class="lab">Presentes</span><b id="cntNum2">0</b><small id="cntTot2">de 0 personas</small></div>
+      </div>
+      <div class="sc"><span class="lab">Faltan</span><b id="stOut2">0</b><small>por llegar</small></div>
+      <div class="sc"><span class="lab">Nuevos hoy</span><b id="stNew2">0</b><small>primera visita</small></div>
+      <div class="sc"><span class="lab">Asistencia</span><b id="stPct2">0%</b><small>del total registrado</small></div>
+    </div>
+
     <div id="list" class="list"></div>
     <div class="spacer"></div>
   </section>
